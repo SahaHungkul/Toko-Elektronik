@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+
+class AuthController extends Controller
+{
+    public function register(Request $request)
+    {
+        try{
+            $validasiRegistrasi = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email',
+                'password' => 'required|string|min:8|confirmed',
+            ]);
+
+            $register = User::create([
+                'name' => $validasiRegistrasi['name'],
+                'email' => $validasiRegistrasi['email'],
+                'password' => bcrypt($validasiRegistrasi['password']),
+            ]);
+
+            // if(!$register){
+            //     return response()->json([
+            //         'status' => false,
+            //         'message' => '',
+            //     ]);
+            // }
+            return response()->json([
+                'status' => true,
+                'message' => 'Registrasi berhasil',
+                'data' => $register,
+            ],200);
+        }catch(\Exception $e){
+            return response()->json([
+                'status' => false,
+                'message' => 'Registrasi gagal',
+                'error' => $e->getMessage(),
+            ],500);
+        }
+    }
+
+    public function login (Request $request)
+    {
+        try{
+            $validasiLogin = $request->validate([
+                'email' => 'required|string|email',
+                'password' => 'required|string',
+            ]);
+
+            $login = User::where('email', $validasiLogin['email'])->first();
+
+            if(!$login || !Hash::check($validasiLogin['password'], $login->password)){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Email atau password salah',
+                ],401);
+            }
+
+            $token = $login->createToken('Token')->accessToken;
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Login berhasil',
+                'token' => $token,
+                'data' => $login,
+            ],200);
+        }catch(\Exception $e){
+            return response()->json([
+                'status' => false,
+                'message' => 'Login gagal',
+                'error' => $e->getMessage(),
+            ],500);
+        }
+    }
+
+    public function logout (Request $request)
+    {
+        try{
+            $request->user()->token()->revoke();
+            
+            return response()->json([
+                'status' => true,
+                'message' => 'Logout berhasil',
+            ],200);
+        }catch(\Exception $e){
+            return response()->json([
+                'status' => false,
+                'message' => 'Logout gagal',
+                'error' => $e->getMessage(),
+            ],500);
+        }
+    }
+
+    public function me(Request $request)
+    {
+        return response()->json([
+            'status' => true,
+            'message' => 'Data user berhasil diambil',
+            'data' => $request->user(),
+        ],200);
+    }
+}
