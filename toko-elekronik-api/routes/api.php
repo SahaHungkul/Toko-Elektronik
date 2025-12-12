@@ -14,10 +14,13 @@ Route::get('/user', function (Request $request) {
 route::post('/register', [AuthController::class, 'register'])->name('api.register');
 route::post('/login', [AuthController::class, 'login'])->name('api.login');
 
-route::apiResource('/categories',CategoriesController::class);
 route::apiResource('/products',ProductController::class);
 
 route::middleware('auth:api')->group(function(){
     route::post('/logout', [AuthController::class, 'logout'])->name('api.logout');
     route::get('/me', [AuthController::class, 'me'])->name('api.me');
+    route::put('/update-profile',[AuthController::class,'updateProfile'])->name('api.updateProfile');
+    route::put('/change-password',[AuthController::class,'changePassword'])->name('api.changePassword');
+
+    route::apiResource('/categories',CategoriesController::class);
 });
